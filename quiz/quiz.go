@@ -12,19 +12,21 @@ import (
 	"time"
 )
 
-func main() {
+type Problem struct {
+	Prompt   string
+	Solution string
+}
 
+var correctCounter, totalCounter int
+
+func main() {
 	var problemsFile = flag.String("f", "problems.csv", "CSV file with problems")
 	var shuffle = flag.Bool("r", false, "Randomly shuffle the problems")
 	var secondsToSolve = flag.Int("t", 30, "Time the player has to solve the problems")
 	flag.Parse()
 
 	problems := readProblems(*problemsFile)
-
-	fmt.Println("----- Math Quiz -----")
-	fmt.Println("---------------------")
-	correctCounter := 0
-	totalCounter := 0
+	correctCounter, totalCounter = 0, 0
 
 	go func() {
 		time.Sleep(time.Duration(*secondsToSolve) * time.Second)
@@ -33,29 +35,14 @@ func main() {
 		os.Exit(0)
 	}()
 
-	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("----------- Math Quiz ------------")
+	fmt.Printf("---- You have %v seconds. Go! ----\n", *secondsToSolve)
 	for {
 		if *shuffle {
 			problems = shuffleProblems(problems)
 		}
-		for _, p := range problems {
-			fmt.Printf("Question %v: %v = ", totalCounter+1, p.Prompt)
-			solution, _ := reader.ReadString('\n')
-			solution = strings.Replace(solution, "\n", "", -1)
-			if solution == p.Solution {
-				fmt.Println("Correct!")
-				correctCounter++
-			} else {
-				fmt.Println("Wrong!")
-			}
-			totalCounter++
-		}
+		runProblems(problems)
 	}
-}
-
-type Problem struct {
-	Prompt   string
-	Solution string
 }
 
 func readProblems(filename string) []Problem {
@@ -84,4 +71,28 @@ func shuffleProblems(problems []Problem) []Problem {
 	rand.Shuffle(len(problems),
 		func(i, j int) { problems[i], problems[j] = problems[j], problems[i] })
 	return problems
+}
+
+func runProblems(problems []Problem) {
+	reader := bufio.NewReader(os.Stdin)
+	for _, p := range problems {
+		fmt.Printf("Question %v: %v = ", totalCounter+1, p.Prompt)
+		solution := readFromInput(reader)
+
+		if solution == p.Solution {
+			fmt.Println("Correct!")
+			correctCounter++
+		} else {
+			fmt.Println("Wrong!")
+		}
+		totalCounter++
+	}
+}
+
+func readFromInput(reader *bufio.Reader) string {
+	solution, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+	}
+	return strings.Replace(solution, "\n", "", -1)
 }
