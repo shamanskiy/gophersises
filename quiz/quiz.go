@@ -17,8 +17,6 @@ type Problem struct {
 	Solution string
 }
 
-var correctCounter, totalCounter int
-
 func main() {
 	var problemsFile = flag.String("f", "problems.csv", "CSV file with problems")
 	var shuffle = flag.Bool("r", false, "Randomly shuffle the problems")
@@ -26,23 +24,29 @@ func main() {
 	flag.Parse()
 
 	problems := readProblems(*problemsFile)
-	correctCounter, totalCounter = 0, 0
 
+	fmt.Println("---------------- Math Quiz -----------------")
+	fmt.Printf("You'll have %v seconds. Press Enter to start:", *secondsToSolve)
+	waitForInput()
+	fmt.Println("Go!\n")
+
+	solved := 0
+	correctlySolved := 0
 	go func() {
-		time.Sleep(time.Duration(*secondsToSolve) * time.Second)
-		fmt.Printf("\nTime's up! You correctly solved %v out of %v problems! Well done!\n",
-			correctCounter, totalCounter)
-		os.Exit(0)
+		for {
+			if *shuffle {
+				problems = shuffleProblems(problems)
+			}
+			runProblems(problems, &solved, &correctlySolved)
+		}
 	}()
 
-	fmt.Println("----------- Math Quiz ------------")
-	fmt.Printf("---- You have %v seconds. Go! ----\n", *secondsToSolve)
-	for {
-		if *shuffle {
-			problems = shuffleProblems(problems)
-		}
-		runProblems(problems)
-	}
+	time.Sleep(time.Duration(*secondsToSolve) * time.Second)
+
+	fmt.Printf("\n\nTime's up! You correctly solved %v out of %v problems!\n",
+		correctlySolved, solved)
+	fmt.Printf("That's %v correct answers per second. Well done!\n",
+		float32(correctlySolved)/float32(*secondsToSolve))
 }
 
 func readProblems(filename string) []Problem {
@@ -73,20 +77,26 @@ func shuffleProblems(problems []Problem) []Problem {
 	return problems
 }
 
-func runProblems(problems []Problem) {
+func runProblems(problems []Problem, solved *int, correctlySolved *int) {
 	reader := bufio.NewReader(os.Stdin)
+
 	for _, p := range problems {
-		fmt.Printf("Question %v: %v = ", totalCounter+1, p.Prompt)
+		fmt.Printf("Question %v: %v = ", *solved+1, p.Prompt)
 		solution := readFromInput(reader)
 
 		if solution == p.Solution {
 			fmt.Println("Correct!")
-			correctCounter++
+			*correctlySolved++
 		} else {
 			fmt.Println("Wrong!")
 		}
-		totalCounter++
+		*solved++
 	}
+}
+
+func waitForInput() {
+	reader := bufio.NewReader(os.Stdin)
+	_, _ = reader.ReadString('\n')
 }
 
 func readFromInput(reader *bufio.Reader) string {
