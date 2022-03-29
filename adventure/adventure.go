@@ -32,6 +32,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", storyHandler(pageTemplate, story))
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	port := 80
 	fmt.Printf("Listening on port %d:\n", port)
