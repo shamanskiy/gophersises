@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type availableArc struct {
@@ -46,7 +47,12 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Access to %s\n", r.URL.Path)
-		pageTemplate.Execute(w, s["intro"])
+
+		arcLabel := strings.ReplaceAll(r.URL.Path, "/", "")
+		if _, ok := s[arcLabel]; !ok {
+			arcLabel = "intro"
+		}
+		pageTemplate.Execute(w, s[arcLabel])
 	})
 
 	port := 80
