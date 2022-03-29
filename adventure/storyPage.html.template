@@ -1,0 +1,17 @@
+<html>
+
+<body>
+	<h1>{{.Title}}</h1>
+	
+    {{ range .StoryLines}}
+	<p> {{ . }}
+	{{ end }}
+	
+    <ul>
+		{{ range .StoryOptions}}
+		<li><a href="/{{.Label}}/">{{.Description}}</a></li>
+		{{end}}
+	</ul>
+</body>
+
+</html>

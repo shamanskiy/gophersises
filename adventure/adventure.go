@@ -21,46 +21,45 @@ type storyArc struct {
 	StoryOptions []availableArc
 }
 
-type story map[string]storyArc
-
 func main() {
-
-	s := readStoryFromJson("gopher.json")
-
-	pageTemplate, err := template.New("Story page").Parse(
-		`<html>
-			<body>
-			<h1>{{.Title}}</h1>
-			{{ range .StoryLines}}
-			<p> {{ . }}
-			{{ end }}
-			<ul>
-			{{ range .StoryOptions}}
-			<li><a href="/{{.Label}}/">{{.Description}}</a></li>
-			{{end}}
-			</ul>
-			</body>
-		</html>`)
+	pageHtml := readPageHtmlTemplate("storyPage.html.template")
+	pageTemplate, err := template.New("Story page").Parse(pageHtml)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("Access to %s\n", r.URL.Path)
+	story := readStoryFromJson("gopher.json")
 
-		arcLabel := strings.ReplaceAll(r.URL.Path, "/", "")
-		if _, ok := s[arcLabel]; !ok {
-			arcLabel = "intro"
-		}
-		pageTemplate.Execute(w, s[arcLabel])
-	})
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", storyHandler(pageTemplate, story))
 
 	port := 80
 	fmt.Printf("Listening on port %d:\n", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
 }
 
-func readStoryFromJson(filename string) story {
+func storyHandler(pageTemplate *template.Template, story map[string]storyArc) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("Access to %s\n", r.URL.Path)
+
+		arcLabel := strings.ReplaceAll(r.URL.Path, "/", "")
+		if _, ok := story[arcLabel]; !ok {
+			arcLabel = "intro"
+		}
+		pageTemplate.Execute(w, story[arcLabel])
+	}
+}
+
+func readPageHtmlTemplate(filename string) string {
+	pageHtml, err := os.ReadFile(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return string(pageHtml)
+}
+
+func readStoryFromJson(filename string) map[string]storyArc {
 	storyJson, err := os.ReadFile(filename)
 	if err != nil {
 		log.Fatal(err)
