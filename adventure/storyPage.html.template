@@ -16,13 +16,13 @@
 	</div>
 
 	<div class="row">
-    	{{ range .StoryLines}}
+    	{{ range .Paragraphs}}
 		<p> {{ . }}
 		{{ end }}
 	
     	<ol>
-			{{ range .StoryOptions}}
-			<li><a href="/{{.Label}}/">{{.Description}}</a></li>
+			{{ range .Options}}
+			<li><a href="/{{.Chapter}}/">{{.Description}}</a></li>
 			{{end}}
 		</ol>
 	</div>

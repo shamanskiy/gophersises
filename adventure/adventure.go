@@ -10,15 +10,17 @@ import (
 	"strings"
 )
 
-type availableArc struct {
-	Label       string
-	Description string
+type Story map[string]Chapter
+
+type StoryOption struct {
+	Chapter     string `json:"arc"`
+	Description string `json:"text"`
 }
 
-type storyArc struct {
-	Title        string
-	StoryLines   []string
-	StoryOptions []availableArc
+type Chapter struct {
+	Title      string        `json:"title"`
+	Paragraphs []string      `json:"story"`
+	Options    []StoryOption `json:"options"`
 }
 
 func main() {
@@ -39,7 +41,7 @@ func main() {
 	http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
 }
 
-func storyHandler(pageTemplate *template.Template, story map[string]storyArc) func(w http.ResponseWriter, r *http.Request) {
+func storyHandler(pageTemplate *template.Template, story Story) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Access to %s\n", r.URL.Path)
 
@@ -60,48 +62,18 @@ func readPageHtmlTemplate(filename string) string {
 	return string(pageHtml)
 }
 
-func readStoryFromJson(filename string) map[string]storyArc {
-	storyJson, err := os.ReadFile(filename)
+func readStoryFromJson(filename string) Story {
+
+	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var storyMap map[string]interface{}
-	err = json.Unmarshal(storyJson, &storyMap)
-	if err != nil {
+	decoder := json.NewDecoder(file)
+	var story Story
+	if err := decoder.Decode(&story); err != nil {
 		log.Fatal(err)
 	}
 
-	s := make(map[string]storyArc)
-	for key, value := range storyMap {
-		s[key] = buildStoryArc(value)
-	}
-
-	return s
-}
-
-func buildStoryArc(arcUnstructured interface{}) storyArc {
-	arcMap := arcUnstructured.(map[string]interface{})
-	arcStory := arcMap["story"].([]interface{})
-	arcOptions := arcMap["options"].([]interface{})
-
-	arc := storyArc{
-		Title:        arcMap["title"].(string),
-		StoryLines:   make([]string, len(arcStory)),
-		StoryOptions: make([]availableArc, len(arcOptions)),
-	}
-
-	for i, line := range arcStory {
-		arc.StoryLines[i] = line.(string)
-	}
-
-	for i, optionUnstructured := range arcOptions {
-		optionMap := optionUnstructured.(map[string]interface{})
-		arc.StoryOptions[i] = availableArc{
-			Label:       optionMap["arc"].(string),
-			Description: optionMap["text"].(string),
-		}
-	}
-
-	return arc
+	return story
 }
