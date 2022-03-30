@@ -1,4 +1,61 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
 html,
 body {
-    background-color: #222;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    color: #333333;
+    font-family: 'Lato', 'Arial', sans-serif;
+    font-weight: 400;
+    font-size: 25px;
+}
+
+.row {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.gopher {
+    float: right;
+    margin-top: 15px;
+    height: 200px;
+}
+
+h1 {
+    text-align: center;
+    font-weight: 400;
+    margin: 80px 0px 100px 0px;
+    font-family: 'Lato';
+    font-size: 200%;
+}
+
+p {
+    margin-bottom: 25px;
+    text-align: justify;
+  text-justify: inter-word;
+}
+
+li {
+    margin-top: 5px;
+}
+
+ol {
+    margin-bottom: 25px;
+}
+
+a:link,
+a:visited {
+    text-decoration: none;
+    color:rgb(70, 189, 236);
+    transition: color 0.5s;
+    font-weight: 400;
+}
+  
+a:hover,
+a:active {
+    text-decoration: none;
+    color: orange;
 }
