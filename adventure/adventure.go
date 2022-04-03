@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"html/template"
 	"log"
@@ -24,56 +25,68 @@ type Chapter struct {
 }
 
 func main() {
-	pageHtml := readPageHtmlTemplate("storyPage.html.template")
-	pageTemplate, err := template.New("Story page").Parse(pageHtml)
-	if err != nil {
-		log.Fatal(err)
-	}
+	port := flag.Int("port", 80, "Port to serve the adventure at")
+	flag.Parse()
 
-	story := readStoryFromJson("gopher.json")
+	pageHtml, err := readPageHtmlTemplate("storyPage.html.template")
+	checkError(err)
+
+	pageTemplate := template.Must(template.New("Story page").Parse(pageHtml))
+
+	story, err := readStoryFromJson("gopher.json")
+	checkError(err)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", storyHandler(pageTemplate, story))
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	port := 80
-	fmt.Printf("Listening on port %d:\n", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
+	fmt.Printf("Listening on port :%d\n", *port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), mux))
 }
 
 func storyHandler(pageTemplate *template.Template, story Story) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Access to %s\n", r.URL.Path)
 
-		arcLabel := strings.ReplaceAll(r.URL.Path, "/", "")
-		if _, ok := story[arcLabel]; !ok {
-			arcLabel = "intro"
+		chapter := strings.ReplaceAll(r.URL.Path, "/", "")
+		if _, ok := story[chapter]; !ok {
+			chapter = "intro"
 		}
-		pageTemplate.Execute(w, story[arcLabel])
+		err := pageTemplate.Execute(w, story[chapter])
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Something went wrong...", http.StatusInternalServerError)
+		}
 	}
 }
 
-func readPageHtmlTemplate(filename string) string {
-	pageHtml, err := os.ReadFile(filename)
+func checkError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	return string(pageHtml)
 }
 
-func readStoryFromJson(filename string) Story {
+func readPageHtmlTemplate(filename string) (string, error) {
+	pageHtml, err := os.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+
+	return string(pageHtml), nil
+}
+
+func readStoryFromJson(filename string) (Story, error) {
 
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	decoder := json.NewDecoder(file)
 	var story Story
 	if err := decoder.Decode(&story); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return story
+	return story, nil
 }
