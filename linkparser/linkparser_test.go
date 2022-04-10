@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/Shamanskiy/gophercises/testutils"
 )
 
 func TestExtractLinks_NakedA(t *testing.T) {
@@ -14,26 +16,26 @@ func TestExtractLinks_NakedA(t *testing.T) {
 		{"/link", "Link text"},
 	}
 
-	checkError(err, t)
+	testutils.CheckError(err, t)
 	checkLinks(got, want, t)
 }
 
 func TestExtractLinks_Ex1(t *testing.T) {
 	html, err := os.Open("testdata/ex1.html")
-	checkError(err, t)
+	testutils.CheckError(err, t)
 
 	got, err := Parse(html)
 	want := []Link{
 		{"/other-page", "A link to another page"},
 	}
 
-	checkError(err, t)
+	testutils.CheckError(err, t)
 	checkLinks(got, want, t)
 }
 
 func TestExtractLinks_Ex2(t *testing.T) {
 	html, err := os.Open("testdata/ex2.html")
-	checkError(err, t)
+	testutils.CheckError(err, t)
 
 	got, err := Parse(html)
 	want := []Link{
@@ -41,13 +43,13 @@ func TestExtractLinks_Ex2(t *testing.T) {
 		{"https://github.com/gophercises", "Gophercises is on Github!"},
 	}
 
-	checkError(err, t)
+	testutils.CheckError(err, t)
 	checkLinks(got, want, t)
 }
 
 func TestExtractLinks_Ex3(t *testing.T) {
 	html, err := os.Open("testdata/ex3.html")
-	checkError(err, t)
+	testutils.CheckError(err, t)
 
 	got, err := Parse(html)
 	want := []Link{
@@ -56,54 +58,26 @@ func TestExtractLinks_Ex3(t *testing.T) {
 		{"https://twitter.com/marcusolsson", "@marcusolsson"},
 	}
 
-	checkError(err, t)
+	testutils.CheckError(err, t)
 	checkLinks(got, want, t)
 }
 
 func TestExtractLinks_Ex4(t *testing.T) {
 	html, err := os.Open("testdata/ex4.html")
-	checkError(err, t)
+	testutils.CheckError(err, t)
 
 	got, err := Parse(html)
 	want := []Link{
 		{"/dog-cat", "dog cat"},
 	}
 
-	checkError(err, t)
+	testutils.CheckError(err, t)
 	checkLinks(got, want, t)
-}
-
-// Helper functions ////
-
-func checkError(err error, t *testing.T) {
-	t.Helper()
-	if err != nil {
-		t.Errorf("Failed with error: %s\n", err)
-	}
 }
 
 func checkLinks(got, want []Link, t *testing.T) {
 	t.Helper()
-	if len(got) != len(want) {
-		reportLinksError(got, want, t)
+	if !testutils.SameElements(got, want) {
+		testutils.ReportDifferentSlices(got, want, "Different links!", t)
 	}
-
-	for i, link := range got {
-		if want[i] != link {
-			reportLinksError(got, want, t)
-		}
-	}
-}
-
-func reportLinksError(got, want []Link, t *testing.T) {
-	t.Helper()
-	t.Logf("Got:\n")
-	for _, link := range got {
-		t.Logf("\t%+v\n", link)
-	}
-	t.Logf("Want:\n")
-	for _, link := range want {
-		t.Logf("\t%+v\n", link)
-	}
-	t.Errorf("Wrong links!\n")
 }
