@@ -1,47 +1,61 @@
 package linkparser
 
 import (
-	"bytes"
+	"io"
 	"strings"
 
 	"golang.org/x/net/html"
 )
 
-func ExtractLinks(htmlDoc []byte) (map[string]string, error) {
-	doc, err := html.Parse(bytes.NewReader(htmlDoc))
+type Link struct {
+	Href string
+	Text string
+}
+
+func Parse(htmlDoc io.Reader) ([]Link, error) {
+	doc, err := html.Parse(htmlDoc)
 	if err != nil {
 		return nil, err
 	}
 
-	links := map[string]string{}
-	parseHtml(doc, links)
-
-	return links, nil
+	return findLinks(doc), nil
 }
 
-func parseHtml(node *html.Node, links map[string]string) {
+func findLinks(node *html.Node) []Link {
 	if node.Type == html.ElementNode && node.Data == "a" {
-		link := node.Attr[0].Val
-		linkText := parseLink(node)
-		links[link] = strings.TrimSpace(linkText)
-		return
+		return []Link{buildLink(node)}
 	}
 
+	links := []Link{}
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		parseHtml(child, links)
+		links = append(links, findLinks(child)...)
 	}
+	return links
 }
 
-func parseLink(node *html.Node) string {
-	linkText := ""
+func buildLink(node *html.Node) Link {
+	href := getHrefFromLink(node)
+	text := getTextFromLink(node)
+	return Link{href, strings.TrimSpace(text)}
+}
 
+func getHrefFromLink(node *html.Node) string {
+	for _, attribute := range node.Attr {
+		if attribute.Key == "href" {
+			return attribute.Val
+		}
+	}
+	return ""
+}
+
+func getTextFromLink(node *html.Node) string {
 	if node.Type == html.TextNode {
-		linkText += node.Data
+		return node.Data
 	}
 
+	linkText := ""
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		linkText += parseLink(child)
+		linkText += getTextFromLink(child)
 	}
-
 	return linkText
 }
