@@ -1,64 +1,94 @@
 package linkparser
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
-func TestExtractLinks_SingleLink(t *testing.T) {
-	html := `<html>
-	<body>
-	  <h1>Hello!</h1>
-	  <a href="/other-page">A link to another page</a>
-	</body>
-	</html>
-	links := ExtractLinks(html)`
+func TestExtractLinks_NakedA(t *testing.T) {
+	html := `<a href="/link">Link text</a>`
 
 	got, err := ExtractLinks([]byte(html))
+	want := map[string]string{
+		"/link": "Link text",
+	}
+
+	checkError(err, t)
+	checkLinkMaps(got, want, t)
+}
+
+func TestExtractLinks_Ex1(t *testing.T) {
+
+	html, err := os.ReadFile("testdata/ex1.html")
+	checkError(err, t)
+
+	got, err := ExtractLinks(html)
 	want := map[string]string{
 		"/other-page": "A link to another page",
 	}
 
-	if err != nil {
-		t.Errorf("Failed with error: %s\n", err)
-	}
-	if !linkMapsEqual(got, want) {
-		t.Errorf("Wrong links! Got %v, want %v\n", got, want)
-	}
+	checkError(err, t)
+	checkLinkMaps(got, want, t)
 }
 
-func TestExtractLinks_TwoLinks(t *testing.T) {
-	html := `<html>
-	<body>
-	  <h1>Hello!</h1>
-	  <a href="/other-page">A link to another page</a>
-	  <a href="/another-link">Click me!</a>
-	</body>
-	</html>
-	links := ExtractLinks(html)`
+func TestExtractLinks_Ex2(t *testing.T) {
+	html, err := os.ReadFile("testdata/ex2.html")
+	checkError(err, t)
 
 	got, err := ExtractLinks([]byte(html))
 	want := map[string]string{
-		"/other-page":   "A link to another page",
-		"/another-link": "Click me!",
+		"https://www.twitter.com/joncalhoun": "Check me out on twitter",
+		"https://github.com/gophercises":     "Gophercises is on Github!",
 	}
 
+	checkError(err, t)
+	checkLinkMaps(got, want, t)
+}
+
+func TestExtractLinks_Ex3(t *testing.T) {
+	html, err := os.ReadFile("testdata/ex3.html")
+	checkError(err, t)
+
+	got, err := ExtractLinks([]byte(html))
+	want := map[string]string{
+		"#":                                "Login",
+		"/lost":                            "Lost? Need help?",
+		"https://twitter.com/marcusolsson": "@marcusolsson",
+	}
+
+	checkError(err, t)
+	checkLinkMaps(got, want, t)
+}
+
+func TestExtractLinks_Ex4(t *testing.T) {
+	html, err := os.ReadFile("testdata/ex4.html")
+	checkError(err, t)
+
+	got, err := ExtractLinks([]byte(html))
+	want := map[string]string{
+		"/dog-cat": "dog cat",
+	}
+
+	checkError(err, t)
+	checkLinkMaps(got, want, t)
+}
+
+func checkError(err error, t *testing.T) {
+	t.Helper()
 	if err != nil {
 		t.Errorf("Failed with error: %s\n", err)
 	}
-	if !linkMapsEqual(got, want) {
-		t.Errorf("Wrong links! Got %v, want %v\n", got, want)
-	}
 }
 
-func linkMapsEqual(got, want map[string]string) bool {
+func checkLinkMaps(got, want map[string]string, t *testing.T) {
 	if len(got) != len(want) {
-		return false
+		t.Errorf("Wrong links!\nGot:\n%v\nWant:\n%v\n", got, want)
 	}
 
 	for key, got_value := range got {
 		want_value, ok := want[key]
 		if !ok || want_value != got_value {
-			return false
+			t.Errorf("Wrong links!\nGot:\n%v\nWant:\n%v\n", got, want)
 		}
 	}
-
-	return true
 }

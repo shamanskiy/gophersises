@@ -2,6 +2,7 @@ package linkparser
 
 import (
 	"bytes"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -13,20 +14,34 @@ func ExtractLinks(htmlDoc []byte) (map[string]string, error) {
 	}
 
 	links := map[string]string{}
-	parsingFunc(doc, links)
+	parseHtml(doc, links)
 
 	return links, nil
 }
 
-func parsingFunc(node *html.Node, links map[string]string) {
+func parseHtml(node *html.Node, links map[string]string) {
 	if node.Type == html.ElementNode && node.Data == "a" {
 		link := node.Attr[0].Val
-		linkText := node.FirstChild.Data
-		links[link] = linkText
+		linkText := parseLink(node)
+		links[link] = strings.TrimSpace(linkText)
 		return
 	}
 
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		parsingFunc(child, links)
+		parseHtml(child, links)
 	}
+}
+
+func parseLink(node *html.Node) string {
+	linkText := ""
+
+	if node.Type == html.TextNode {
+		linkText += node.Data
+	}
+
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		linkText += parseLink(child)
+	}
+
+	return linkText
 }
