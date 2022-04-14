@@ -1,7 +1,6 @@
 package sitemap
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -17,7 +16,7 @@ type siteMapBuilder struct {
 
 func NewSiteMapBuilder(url string) *siteMapBuilder {
 	return &siteMapBuilder{
-		domainURL:   url,
+		domainURL:   removeTrailingSlash(url),
 		visitedURLs: base.Set[string]{},
 		urlsToVisit: base.Set[string]{},
 	}
@@ -45,7 +44,6 @@ func (builder *siteMapBuilder) Parse() ([]string, error) {
 }
 
 func (builder *siteMapBuilder) parseURL(url string) error {
-	log.Printf("Client: GET %s\n", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -82,10 +80,23 @@ func getHRefs(links []linkparser.Link) []string {
 func formatHRef(url, domain string) string {
 	ind := strings.Index(url, domain)
 	if ind == -1 {
-		return domain + url
+		url = domain + url
+	}
+
+	return removeTrailingSlash(url)
+}
+
+func removeTrailingSlash(url string) string {
+	if len(url) == 0 {
+		return url
+	}
+
+	if url[len(url)-1:] == "/" {
+		return url[:len(url)-1]
 	} else {
 		return url
 	}
+
 }
 
 func sameDomainLink(url, domain string) bool {

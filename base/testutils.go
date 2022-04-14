@@ -47,3 +47,10 @@ func SameElements[T comparable](got, want []T) bool {
 
 	return true
 }
+
+func CheckEqual[T comparable](got, want T, t *testing.T) {
+	t.Helper()
+	if got != want {
+		t.Fatalf("Error: got %+v, want %+v\n", got, want)
+	}
+}
