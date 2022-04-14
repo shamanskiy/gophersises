@@ -22,19 +22,19 @@ var htmlTemplate string = `
 var responseWithLinks *template.Template = template.Must(template.New("").Parse(htmlTemplate))
 
 func TestMapBuilder(t *testing.T) {
-	links := []string{"/home", "/about"}
-
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Logf("Server: GET request %v\n", r.URL)
+		links := []string{"/home", "/about", "/about", "https://other-domain.com"}
 		responseWithLinks.Execute(w, links)
 	}))
 	defer server.Close()
 
+	got, err := NewSiteMapBuilder(server.URL).Parse()
 	want := []string{
+		server.URL,
 		server.URL + "/home",
 		server.URL + "/about",
 	}
-	got, err := ParseSite(server.URL)
 
 	testutils.CheckError(err, t)
 	compareSiteMaps(got, want, t)
