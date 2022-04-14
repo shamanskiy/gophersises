@@ -14,16 +14,15 @@ type siteMapBuilder struct {
 	urlsToVisit base.Set[string]
 }
 
-func NewSiteMapBuilder(url string) *siteMapBuilder {
-	return &siteMapBuilder{
-		domainURL:   removeTrailingSlash(url),
+func BuildMap(domainUrl string) ([]string, error) {
+	domainUrl = removeTrailingSlash(domainUrl)
+
+	builder := siteMapBuilder{
+		domainURL:   domainUrl,
 		visitedURLs: base.Set[string]{},
 		urlsToVisit: base.Set[string]{},
 	}
-}
-
-func (builder *siteMapBuilder) Parse() ([]string, error) {
-	builder.urlsToVisit.Add(builder.domainURL)
+	builder.urlsToVisit.Add(domainUrl)
 
 	for !builder.urlsToVisit.Empty() {
 		url := builder.urlsToVisit.Next()
@@ -32,12 +31,12 @@ func (builder *siteMapBuilder) Parse() ([]string, error) {
 		if builder.visitedURLs.Has(url) {
 			continue
 		}
+		builder.visitedURLs.Add(url)
 
 		err := builder.parseURL(url)
 		if err != nil {
-			return nil, err
+			return builder.visitedURLs.ToSlice(), err
 		}
-		builder.visitedURLs.Add(url)
 	}
 
 	return builder.visitedURLs.ToSlice(), nil

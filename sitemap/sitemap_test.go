@@ -30,7 +30,7 @@ func TestMapBuilder_SinglePage(t *testing.T) {
 	}))
 	defer server.Close()
 
-	got, err := NewSiteMapBuilder(server.URL).Parse()
+	got, err := BuildMap(server.URL)
 	want := []string{
 		server.URL,
 		server.URL + "/posts",
@@ -61,7 +61,7 @@ func TestMapBuilder_MultiplePages(t *testing.T) {
 	}))
 	defer server.Close()
 
-	got, err := NewSiteMapBuilder(server.URL).Parse()
+	got, err := BuildMap(server.URL)
 	want := []string{
 		server.URL,
 		server.URL + "/posts",

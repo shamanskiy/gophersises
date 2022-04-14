@@ -12,8 +12,7 @@ func main() {
 	url := flag.String("url", "http://127.0.0.1", "domain url of the site that we want to build a site map for")
 	flag.Parse()
 
-	builder := sitemap.NewSiteMapBuilder(*url)
-	siteMap, err := builder.Parse()
+	siteMap, err := sitemap.BuildMap(*url)
 	if err != nil {
 		log.Fatalln(err)
 	}
