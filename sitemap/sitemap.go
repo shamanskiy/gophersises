@@ -5,31 +5,32 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Shamanskiy/gophercises/base"
 	"github.com/Shamanskiy/gophercises/linkparser"
 )
 
 type siteMapBuilder struct {
 	domainURL   string
-	visitedURLs set[string]
-	urlsToVisit set[string]
+	visitedURLs base.Set[string]
+	urlsToVisit base.Set[string]
 }
 
 func NewSiteMapBuilder(url string) *siteMapBuilder {
 	return &siteMapBuilder{
 		domainURL:   url,
-		visitedURLs: set[string]{},
-		urlsToVisit: set[string]{},
+		visitedURLs: base.Set[string]{},
+		urlsToVisit: base.Set[string]{},
 	}
 }
 
 func (builder *siteMapBuilder) Parse() ([]string, error) {
-	builder.urlsToVisit.add(builder.domainURL)
+	builder.urlsToVisit.Add(builder.domainURL)
 
-	for len(builder.urlsToVisit) != 0 {
-		url := builder.urlsToVisit.next()
-		builder.urlsToVisit.remove(url)
+	for !builder.urlsToVisit.Empty() {
+		url := builder.urlsToVisit.Next()
+		builder.urlsToVisit.Remove(url)
 
-		if builder.visitedURLs.has(url) {
+		if builder.visitedURLs.Has(url) {
 			continue
 		}
 
@@ -37,10 +38,10 @@ func (builder *siteMapBuilder) Parse() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		builder.visitedURLs.add(url)
+		builder.visitedURLs.Add(url)
 	}
 
-	return setToSlice(builder.visitedURLs), nil
+	return builder.visitedURLs.ToSlice(), nil
 }
 
 func (builder *siteMapBuilder) parseURL(url string) error {
@@ -62,8 +63,8 @@ func (builder *siteMapBuilder) parseURL(url string) error {
 			continue
 		}
 		hrefWithDomain := formatHRef(href, builder.domainURL)
-		if !builder.visitedURLs.has(hrefWithDomain) {
-			builder.urlsToVisit.add(hrefWithDomain)
+		if !builder.visitedURLs.Has(hrefWithDomain) {
+			builder.urlsToVisit.Add(hrefWithDomain)
 		}
 	}
 
@@ -101,35 +102,4 @@ func sameDomainLink(url, domain string) bool {
 	} else {
 		return false
 	}
-}
-
-type set[T comparable] map[T]struct{}
-
-func (s set[T]) add(elem T) {
-	s[elem] = struct{}{}
-}
-
-func (s set[T]) remove(elem T) {
-	delete(s, elem)
-}
-
-func (s set[T]) has(elem T) bool {
-	_, ok := s[elem]
-	return ok
-}
-
-func (s set[T]) next() T {
-	for elem := range s {
-		return elem
-	}
-	var result T
-	return result
-}
-
-func setToSlice(set set[string]) []string {
-	slice := []string{}
-	for key := range set {
-		slice = append(slice, key)
-	}
-	return slice
 }

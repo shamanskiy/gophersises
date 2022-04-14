@@ -6,7 +6,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/Shamanskiy/gophercises/testutils"
+	"github.com/Shamanskiy/gophercises/base"
 )
 
 var htmlTemplate string = `
@@ -36,13 +36,13 @@ func TestMapBuilder(t *testing.T) {
 		server.URL + "/about",
 	}
 
-	testutils.CheckError(err, t)
+	base.CheckError(err, t)
 	compareSiteMaps(got, want, t)
 }
 
 func compareSiteMaps(got, want []string, t *testing.T) {
 	t.Helper()
-	if !testutils.SameElements(got, want) {
-		testutils.ReportDifferentSlices(got, want, "Different sitemaps!", t)
+	if !base.SameElements(got, want) {
+		base.ReportDifferentSlices(got, want, "Different sitemaps!", t)
 	}
 }

@@ -28,7 +28,7 @@ func main() {
 	fmt.Println("---------------- Math Quiz -----------------")
 	fmt.Printf("You'll have %v seconds. Press Enter to start:", *secondsToSolve)
 	waitForInput()
-	fmt.Println("Go!\n")
+	fmt.Println("Go!")
 
 	solved := 0
 	correctlySolved := 0
