@@ -14,19 +14,31 @@ func main() {
 	url := flag.String("url", "http://127.0.0.1", "domain url of the site that we want to build a site map for")
 	flag.Parse()
 
+	reporter := createInterruptReporter()
+
+	siteMap, err := sitemap.BuildMap(*url, reporter)
+	if err != nil {
+		log.Println(err)
+	}
+	printSiteMap(siteMap)
+}
+
+func createInterruptReporter() chan []string {
 	interruptChannel := make(chan os.Signal, 1)
+	reporter := make(chan []string)
 	signal.Notify(interruptChannel, os.Interrupt)
 	go func() {
 		<-interruptChannel
-		fmt.Println("Interrupted")
+		reporter <- []string{}
+		siteMap := <-reporter
+		printSiteMap(siteMap)
 		os.Exit(1)
 	}()
 
-	siteMap, err := sitemap.BuildMap(*url)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	return reporter
+}
 
+func printSiteMap(siteMap []string) {
 	for _, url := range siteMap {
 		fmt.Println(url)
 	}

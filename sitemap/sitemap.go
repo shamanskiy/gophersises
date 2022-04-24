@@ -18,15 +18,15 @@ type siteMapBuilder struct {
 	urlsToVisit base.Set[string]
 }
 
-func BuildMap(domainUrl string) ([]string, error) {
-	domainUrl = removeTrailingSlash(domainUrl)
+func BuildMap(domainUrl string, reporter chan []string) ([]string, error) {
+	// Initialize the builder with domainUrl to visit
+	builder := makeSiteMapBuilder(domainUrl)
 
-	builder := siteMapBuilder{
-		domainURL:   domainUrl,
-		visitedURLs: base.Set[string]{},
-		urlsToVisit: base.Set[string]{},
+	// An optional channel to get the intermediate result
+	// while the site map builder is running
+	if reporter != nil {
+		launchReporter(&builder, reporter)
 	}
-	builder.urlsToVisit.Add(domainUrl)
 
 	for !builder.urlsToVisit.Empty() {
 		url := builder.urlsToVisit.Pop()
@@ -43,6 +43,24 @@ func BuildMap(domainUrl string) ([]string, error) {
 	}
 
 	return builder.visitedURLs.ToSlice(), nil
+}
+
+func makeSiteMapBuilder(domainUrl string) siteMapBuilder {
+	builder := siteMapBuilder{
+		domainURL:   removeTrailingSlash(domainUrl),
+		visitedURLs: base.Set[string]{},
+		urlsToVisit: base.Set[string]{},
+	}
+	builder.urlsToVisit.Add(domainUrl)
+
+	return builder
+}
+
+func launchReporter(builder *siteMapBuilder, reporter chan []string) {
+	go func() {
+		<-reporter
+		reporter <- builder.visitedURLs.ToSlice()
+	}()
 }
 
 func (builder *siteMapBuilder) parseURL(url string) error {
