@@ -1,10 +1,10 @@
 // Add search depth restriction
-// Add XML output
 // Add multi-threading
-// Add interruption output
 package sitemap
 
 import (
+	"bytes"
+	"encoding/xml"
 	"net/http"
 	"strings"
 
@@ -12,58 +12,101 @@ import (
 	"github.com/Shamanskiy/gophercises/linkparser"
 )
 
-type siteMapBuilder struct {
+type siteParser struct {
 	domainURL   string
 	visitedURLs base.Set[string]
 	urlsToVisit base.Set[string]
 }
 
-func BuildMap(domainUrl string, reporter chan []string) ([]string, error) {
-	// Initialize the builder with domainUrl to visit
-	builder := makeSiteMapBuilder(domainUrl)
+// Parse domain and collect all reachable urls on the same domain
+func ParseSite(domainUrl string, reporter chan []string) ([]string, error) {
+	// Initialize the parser with domainUrl to visit
+	parser := makeSiteParser(domainUrl)
 
 	// An optional channel to get the intermediate result
-	// while the site map builder is running
+	// while the site map parser is running
 	if reporter != nil {
-		launchReporter(&builder, reporter)
+		launchReporter(&parser, reporter)
 	}
 
-	for !builder.urlsToVisit.Empty() {
-		url := builder.urlsToVisit.Pop()
+	for !parser.urlsToVisit.Empty() {
+		url := parser.urlsToVisit.Pop()
 
-		if builder.visitedURLs.Has(url) {
+		if parser.visitedURLs.Has(url) {
 			continue
 		}
-		builder.visitedURLs.Add(url)
+		parser.visitedURLs.Add(url)
 
-		err := builder.parseURL(url)
+		err := parser.parseURL(url)
 		if err != nil {
-			return builder.visitedURLs.ToSlice(), err
+			return parser.visitedURLs.ToSlice(), err
 		}
 	}
 
-	return builder.visitedURLs.ToSlice(), nil
+	return parser.visitedURLs.ToSlice(), nil
 }
 
-func makeSiteMapBuilder(domainUrl string) siteMapBuilder {
-	builder := siteMapBuilder{
+/* Returns the site map XML in this format:
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://www.example.com/foo1.html</loc>
+  </url>
+  <url>
+    <loc>http://www.example.com/foo2.html</loc>
+  </url>
+</urlset>
+*/
+func MakeXmlMap(urls []string) (string, error) {
+	siteMap := siteMapXmlFormat{Schema: "http://www.sitemaps.org/schemas/sitemap/0.9"}
+	for _, url := range urls {
+		siteMap.Urls = append(siteMap.Urls, urlXmlFormat{url})
+	}
+
+	siteMapXml := bytes.Buffer{}
+	// add <?xml version="1.0" encoding="UTF-8"?>
+	siteMapXml.Write([]byte(xml.Header))
+
+	encoder := xml.NewEncoder(&siteMapXml)
+	encoder.Indent("", "  ")
+
+	err := encoder.Encode(siteMap)
+	if err != nil {
+		return "", err
+	}
+
+	return siteMapXml.String(), nil
+}
+
+type siteMapXmlFormat struct {
+	XMLName xml.Name       `xml:"urlset"`
+	Schema  string         `xml:"xmlns,attr"`
+	Urls    []urlXmlFormat `xml:"url"`
+}
+
+type urlXmlFormat struct {
+	Loc string `xml:"loc"`
+}
+
+func makeSiteParser(domainUrl string) siteParser {
+	parser := siteParser{
 		domainURL:   removeTrailingSlash(domainUrl),
 		visitedURLs: base.Set[string]{},
 		urlsToVisit: base.Set[string]{},
 	}
-	builder.urlsToVisit.Add(domainUrl)
+	parser.urlsToVisit.Add(domainUrl)
 
-	return builder
+	return parser
 }
 
-func launchReporter(builder *siteMapBuilder, reporter chan []string) {
+func launchReporter(parser *siteParser, reporter chan []string) {
 	go func() {
 		<-reporter
-		reporter <- builder.visitedURLs.ToSlice()
+		reporter <- parser.visitedURLs.ToSlice()
 	}()
 }
 
-func (builder *siteMapBuilder) parseURL(url string) error {
+func (parser *siteParser) parseURL(url string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -77,12 +120,12 @@ func (builder *siteMapBuilder) parseURL(url string) error {
 	hrefs := getHRefs(links)
 
 	for _, href := range hrefs {
-		if !sameDomainLink(href, builder.domainURL) {
+		if !sameDomainLink(href, parser.domainURL) {
 			continue
 		}
-		hrefWithDomain := formatHRef(href, builder.domainURL)
-		if !builder.visitedURLs.Has(hrefWithDomain) {
-			builder.urlsToVisit.Add(hrefWithDomain)
+		hrefWithDomain := formatHRef(href, parser.domainURL)
+		if !parser.visitedURLs.Has(hrefWithDomain) {
+			parser.urlsToVisit.Add(hrefWithDomain)
 		}
 	}
 

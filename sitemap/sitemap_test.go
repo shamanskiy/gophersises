@@ -30,7 +30,7 @@ func TestMapBuilder_SinglePage(t *testing.T) {
 	}))
 	defer server.Close()
 
-	got, err := BuildMap(server.URL, nil)
+	got, err := ParseSite(server.URL, nil)
 	want := []string{
 		server.URL,
 		server.URL + "/posts",
@@ -61,7 +61,7 @@ func TestMapBuilder_MultiplePages(t *testing.T) {
 	}))
 	defer server.Close()
 
-	got, err := BuildMap(server.URL, nil)
+	got, err := ParseSite(server.URL, nil)
 	want := []string{
 		server.URL,
 		server.URL + "/posts",
@@ -129,6 +129,27 @@ func TestFormalHRef(t *testing.T) {
 		want := "https://example.com/home"
 		base.CheckEqual(got, want, t)
 	})
+}
+
+func TestMakeXml(t *testing.T) {
+	urls := []string{
+		"http://www.example.com/foo1.html",
+		"http://www.example.com/foo2.html",
+	}
+
+	got, err := MakeXmlMap(urls)
+	want := `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://www.example.com/foo1.html</loc>
+  </url>
+  <url>
+    <loc>http://www.example.com/foo2.html</loc>
+  </url>
+</urlset>`
+
+	base.CheckError(err, t)
+	base.CheckEqual(got, want, t)
 }
 
 func compareSiteMaps(got, want []string, t *testing.T) {

@@ -16,11 +16,12 @@ func main() {
 
 	reporter := createInterruptReporter()
 
-	siteMap, err := sitemap.BuildMap(*url, reporter)
+	urls, err := sitemap.ParseSite(*url, reporter)
 	if err != nil {
 		log.Println(err)
 	}
-	printSiteMap(siteMap)
+
+	printURLs(urls)
 }
 
 func createInterruptReporter() chan []string {
@@ -31,16 +32,17 @@ func createInterruptReporter() chan []string {
 	go func() {
 		<-interrupter
 		reporter <- []string{}
-		siteMap := <-reporter
-		printSiteMap(siteMap)
+		collectedUrlsSoFar := <-reporter
+		printURLs(collectedUrlsSoFar)
 		os.Exit(1)
 	}()
 
 	return reporter
 }
 
-func printSiteMap(siteMap []string) {
-	for _, url := range siteMap {
+func printURLs(urls []string) {
+	for _, url := range urls {
 		fmt.Println(url)
 	}
+	fmt.Printf("Found %d URLs\n", len(urls))
 }
