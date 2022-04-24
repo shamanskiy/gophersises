@@ -24,11 +24,12 @@ func main() {
 }
 
 func createInterruptReporter() chan []string {
-	interruptChannel := make(chan os.Signal, 1)
+	interrupter := make(chan os.Signal, 1)
+	signal.Notify(interrupter, os.Interrupt)
+
 	reporter := make(chan []string)
-	signal.Notify(interruptChannel, os.Interrupt)
 	go func() {
-		<-interruptChannel
+		<-interrupter
 		reporter <- []string{}
 		siteMap := <-reporter
 		printSiteMap(siteMap)
