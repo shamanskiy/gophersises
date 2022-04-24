@@ -1,3 +1,7 @@
+// Add search depth restriction
+// Add XML output
+// Add multi-threading
+// Add interruption output
 package sitemap
 
 import (
@@ -25,8 +29,7 @@ func BuildMap(domainUrl string) ([]string, error) {
 	builder.urlsToVisit.Add(domainUrl)
 
 	for !builder.urlsToVisit.Empty() {
-		url := builder.urlsToVisit.Next()
-		builder.urlsToVisit.Remove(url)
+		url := builder.urlsToVisit.Pop()
 
 		if builder.visitedURLs.Has(url) {
 			continue
@@ -95,7 +98,6 @@ func removeTrailingSlash(url string) string {
 	} else {
 		return url
 	}
-
 }
 
 func sameDomainLink(url, domain string) bool {

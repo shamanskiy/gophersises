@@ -19,8 +19,17 @@ func (s Set[T]) Next() T {
 	for elem := range s {
 		return elem
 	}
-	var result T
-	return result
+	var emptyResult T
+	return emptyResult
+}
+
+func (s Set[T]) Pop() T {
+	for elem := range s {
+		s.Remove(elem)
+		return elem
+	}
+	var emptyResult T
+	return emptyResult
 }
 
 func (s Set[T]) ToSlice() []T {
