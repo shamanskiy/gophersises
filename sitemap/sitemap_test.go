@@ -77,35 +77,35 @@ func TestSameDomainLink(t *testing.T) {
 
 	t.Run("domain url", func(t *testing.T) {
 		url := "https://example.com"
-		if !sameDomainLink(url, domain) {
+		if !sameDomainURL(url, domain) {
 			t.Fatalf("%s is on domain %s\n", url, domain)
 		}
 	})
 
 	t.Run("empty", func(t *testing.T) {
 		url := ""
-		if sameDomainLink(url, domain) {
+		if sameDomainURL(url, domain) {
 			t.Fatalf("%s is not on domain %s\n", url, domain)
 		}
 	})
 
 	t.Run("domain/home url", func(t *testing.T) {
 		url := "https://example.com/home"
-		if !sameDomainLink(url, domain) {
+		if !sameDomainURL(url, domain) {
 			t.Fatalf("%s is on domain %s\n", url, domain)
 		}
 	})
 
 	t.Run("relative url", func(t *testing.T) {
 		url := "/home"
-		if !sameDomainLink(url, domain) {
+		if !sameDomainURL(url, domain) {
 			t.Fatalf("%s is on domain %s\n", url, domain)
 		}
 	})
 
 	t.Run("other domain", func(t *testing.T) {
 		url := "https://google.com/home"
-		if sameDomainLink(url, domain) {
+		if sameDomainURL(url, domain) {
 			t.Fatalf("%s is not on domain %s\n", url, domain)
 		}
 	})
@@ -117,7 +117,7 @@ func TestFormalHRef(t *testing.T) {
 	t.Run("remove trailing slash", func(t *testing.T) {
 		url := "https://example.com/"
 
-		got := formatHRef(url, domain)
+		got := formatURL(url, domain)
 		want := "https://example.com"
 		base.CheckEqual(got, want, t)
 	})
@@ -125,7 +125,7 @@ func TestFormalHRef(t *testing.T) {
 	t.Run("relative url", func(t *testing.T) {
 		url := "/home"
 
-		got := formatHRef(url, domain)
+		got := formatURL(url, domain)
 		want := "https://example.com/home"
 		base.CheckEqual(got, want, t)
 	})

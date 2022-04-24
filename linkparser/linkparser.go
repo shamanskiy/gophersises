@@ -8,7 +8,7 @@ import (
 )
 
 type Link struct {
-	Href string
+	URL  string
 	Text string
 }
 

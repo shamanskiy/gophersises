@@ -117,30 +117,30 @@ func (parser *siteParser) parseURL(url string) error {
 		return err
 	}
 
-	hrefs := getHRefs(links)
+	urls := getURLs(links)
 
-	for _, href := range hrefs {
-		if !sameDomainLink(href, parser.domainURL) {
+	for _, url := range urls {
+		if !sameDomainURL(url, parser.domainURL) {
 			continue
 		}
-		hrefWithDomain := formatHRef(href, parser.domainURL)
-		if !parser.visitedURLs.Has(hrefWithDomain) {
-			parser.urlsToVisit.Add(hrefWithDomain)
+		urlWithDomain := formatURL(url, parser.domainURL)
+		if !parser.visitedURLs.Has(urlWithDomain) {
+			parser.urlsToVisit.Add(urlWithDomain)
 		}
 	}
 
 	return nil
 }
 
-func getHRefs(links []linkparser.Link) []string {
-	hrefs := make([]string, len(links))
+func getURLs(links []linkparser.Link) []string {
+	urls := make([]string, len(links))
 	for i, link := range links {
-		hrefs[i] = link.Href
+		urls[i] = link.URL
 	}
-	return hrefs
+	return urls
 }
 
-func formatHRef(url, domain string) string {
+func formatURL(url, domain string) string {
 	ind := strings.Index(url, domain)
 	if ind == -1 {
 		url = domain + url
@@ -161,7 +161,7 @@ func removeTrailingSlash(url string) string {
 	}
 }
 
-func sameDomainLink(url, domain string) bool {
+func sameDomainURL(url, domain string) bool {
 	if len(url) == 0 {
 		return false
 	}
